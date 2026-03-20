@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Morning Burn Coach</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1c1c27;
+    --accent: #f5a623;
+    --accent2: #ff5c5c;
+    --green: #4ade80;
+    --text: #f0f0f0;
+    --muted: #888;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background glow */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(ellipse, rgba(245,166,35,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 24px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  .phase-badge {
+    background: rgba(245,166,35,0.12);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    padding: 20px 24px 0;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* ── Main card ── */
+  .main-card {
+    margin: 24px 16px 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 28px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .main-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(245,166,35,0.4), transparent);
+  }
+
+  .exercise-number {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .exercise-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 0.95;
+    letter-spacing: 1px;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .exercise-name span {
+    color: var(--accent);
+  }
+
+  .exercise-detail {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pill.highlight {
+    background: rgba(245,166,35,0.1);
+    border-color: rgba(245,166,35,0.3);
+    color: var(--accent);
+  }
+
+  /* ── Timer ── */
+  .timer-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 160px;
+    height: 160px;
+  }
+
+  .timer-ring svg {
+    transform: rotate(-90deg);
+  }
+
+  .timer-ring circle {
+    fill: none;
+    stroke-width: 6;
+  }
+
+  .ring-bg { stroke: rgba(255,255,255,0.05); }
+  .ring-fill {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+
+  .timer-display {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .timer-seconds {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 58px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .timer-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Rep counter */
+  .rep-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .rep-counter {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .rep-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .rep-tap {
+    font-size: 12px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.5px;
+  }
+
+  /* Instruction box */
+  .instruction {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.7);
+  }
+
+  /* ── Controls ── */
+  .controls {
+    padding: 16px 16px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-next {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 16px;
+    padding: 18px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-next:active { transform: scale(0.97); }
+  .btn-next:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-secondary {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 14px;
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-secondary:active { background: var(--surface); }
+
+  .btn-secondary.active {
+    background: rgba(245,166,35,0.1);
+    border-color: rgba(245,166,35,0.3);
+    color: var(--accent);
+  }
+
+  /* ── Rest screen ── */
+  .rest-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 1;
+    padding: 20px 0;
+  }
+
+  .rest-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    color: var(--green);
+  }
+
+  .rest-sub {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .next-preview {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .next-preview-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .next-preview-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  /* ── Completion screen ── */
+  .done-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex: 1;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .done-emoji {
+    font-size: 64px;
+    animation: bounce 0.5s ease infinite alternate;
+  }
+
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-8px); }
+  }
+
+  .done-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .done-sub {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 320px;
+  }
+
+  .done-stats {
+    display: flex;
+    gap: 16px;
+  }
+
+  .stat-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--accent);
+  }
+
+  .stat-lbl {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* ── Intro screen ── */
+  .intro-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px 0;
+    flex: 1;
+  }
+
+  .intro-hero {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    line-height: 0.95;
+    letter-spacing: 1px;
+  }
+
+  .intro-hero span { color: var(--accent); }
+
+  .intro-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .intro-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.65);
+  }
+
+  .intro-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .mute-notice {
+    background: rgba(255,92,92,0.08);
+    border: 1px solid rgba(255,92,92,0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: rgba(255,92,92,0.9);
+    line-height: 1.5;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">MORNING BURN</div>
+    <div class="phase-badge" id="phaseBadge">Intro</div>
+  </header>
+
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="progressLabel">Ready to start</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- INTRO SCREEN -->
+  <div class="main-card" id="introScreen">
+    <div class="intro-screen">
+      <div class="intro-hero">LET'S<br><span>GET IT</span><br>DONE.</div>
+      <div class="intro-meta">
+        <div class="intro-row"><div class="intro-icon">⏱</div> ~35 minutes total</div>
+        <div class="intro-row"><div class="intro-icon">🔥</div> 5 phases · Warm-up through cool-down</div>
+        <div class="intro-row"><div class="intro-icon">🔊</div> Voice coaching will guide each move</div>
+        <div class="intro-row"><div class="intro-icon">💧</div> Have water nearby before you start</div>
+      </div>
+      <div class="mute-notice">⚠️ Make sure your phone is <strong>NOT on silent</strong> — voice coaching needs your volume on.</div>
+    </div>
+  </div>
+
+  <!-- EXERCISE CARD -->
+  <div class="main-card hidden" id="exerciseCard">
+    <div class="exercise-number" id="exNum">Exercise 1 of 20</div>
+    <div class="exercise-name" id="exName">Jump Squats</div>
+    <div class="exercise-detail" id="exDetail"></div>
+    <div class="instruction" id="exInstruction"></div>
+
+    <!-- Timer UI -->
+    <div class="timer-section hidden" id="timerSection">
+      <div class="timer-ring">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle class="ring-bg" cx="80" cy="80" r="68"/>
+          <circle class="ring-fill" id="ringFill" cx="80" cy="80" r="68"
+            stroke-dasharray="427" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-display">
+          <div class="timer-seconds" id="timerDisplay">45</div>
+          <div class="timer-label">seconds</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rep UI -->
+    <div class="rep-section hidden" id="repSection">
+      <div class="rep-counter" id="repDisplay">12</div>
+      <div class="rep-label">Reps</div>
+      <div class="rep-tap">Complete your reps, then tap Next</div>
+    </div>
+  </div>
+
+  <!-- REST CARD -->
+  <div class="main-card hidden" id="restCard">
+    <div class="rest-screen">
+      <div class="rest-title">REST</div>
+      <div class="rest-sub">Catch your breath</div>
+      <div class="timer-section">
+        <div class="timer-ring">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle class="ring-bg" cx="80" cy="80" r="68"/>
+            <circle class="ring-fill" id="restRingFill" cx="80" cy="80" r="68"
+              stroke-dasharray="427" stroke-dashoffset="0" style="stroke:var(--green)"/>
+          </svg>
+          <div class="timer-display">
+            <div class="timer-seconds" id="restTimerDisplay">60</div>
+            <div class="timer-label">seconds</div>
+          </div>
+        </div>
+      </div>
+      <div class="next-preview">
+        <div class="next-preview-label">Up Next</div>
+        <div class="next-preview-name" id="nextPreviewName">Reverse Lunges</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONE SCREEN -->
+  <div class="main-card hidden" id="doneCard">
+    <div class="done-screen">
+      <div class="done-emoji">🔥</div>
+      <div class="done-title">WORKOUT<br>COMPLETE</div>
+      <div class="done-stats">
+        <div class="stat-box"><div class="stat-val" id="statExercises">0</div><div class="stat-lbl">Exercises</div></div>
+        <div class="stat-box"><div class="stat-val" id="statTime">0</div><div class="stat-lbl">Minutes</div></div>
+      </div>
+      <div class="done-sub">Outstanding work. You showed up, you pushed through — that's what builds the habit. See you tomorrow morning. 💪</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-next" id="btnNext" onclick="handleNext()">START WORKOUT →</button>
+    <div class="btn-row hidden" id="btnRow">
+      <button class="btn-secondary" id="btnVoice" onclick="toggleVoice()">🔊 Voice On</button>
+      <button class="btn-secondary" id="btnMic" onclick="startListening()">🎙 Say "Next"</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Workout Data ──────────────────────────────────────────────
+const CIRC = 2 * Math.PI * 68; // 427
+
+const workout = [
+  // WARM-UP
+  { phase:'Warm-Up', name:'Arm Circles', type:'timer', duration:40, instruction:'Stand tall with arms out wide. Make big slow circles forward, then back. Loosen those shoulders.', cue:'Arm circles — roll those shoulders out, nice and easy.' },
+  { phase:'Warm-Up', name:'Hip Circles', type:'timer', duration:40, instruction:'Hands on hips, feet shoulder-width. Draw big circles with your hips — like you\'re hula hooping.', cue:'Hip circles. Loosen up that lower back and hips.' },
+  { phase:'Warm-Up', name:'Leg Swings', type:'timer', duration:30, instruction:'Hold a wall if needed. Swing one leg forward and back like a pendulum — 15 seconds each side.', cue:'Leg swings. Forward and back, nice and controlled.' },
+  { phase:'Warm-Up', name:'Slow High Knees', type:'timer', duration:40, instruction:'March in place, driving your knees up toward your chest. Keep your core engaged and back straight.', cue:'Slow high knees — drive those knees up and get your heart rate going.' },
+  { phase:'Warm-Up', name:'Inchworms', type:'reps', reps:5, instruction:'Stand tall, hinge forward, walk your hands out to a plank, then walk them back and stand. Slow and controlled.', cue:'Inchworms — five reps. Walk it out, feel the stretch.' },
+
+  // CIRCUIT 1
+  { phase:'Circuit 1', name:'Jump Squats', type:'reps', reps:12, instruction:'Feet shoulder-width, squat down, then explode up into a jump. Land softly with knees bent. Power through!', cue:'Jump squats — twelve reps. Explode up, land soft.' },
+  { phase:'Circuit 1', name:'Reverse Lunges', type:'reps', reps:10, instruction:'Step one foot back and lower your back knee toward the floor. Keep your front shin vertical. 10 each leg.', cue:'Reverse lunges — ten reps each leg. Keep that chest tall.' },
+  { phase:'Circuit 1', name:'Glute Bridges', type:'reps', reps:15, instruction:'Lie on your back, knees bent, feet flat. Drive your hips up and squeeze your glutes at the top. Hold a beat.', cue:'Glute bridges — fifteen reps. Squeeze hard at the top.' },
+  { phase:'Circuit 1', name:'Wall Sit', type:'timer', duration:40, instruction:'Back flat on the wall, thighs parallel to the floor, hold. If you have to come up, rest briefly and get back down.', cue:'Wall sit — hold for forty seconds. Thighs parallel, back flat. Burn is normal.' },
+  { phase:'Circuit 1', name:'Rest — Round 1 Done!', type:'rest', duration:75, cue:'Circuit one complete — great work. Rest up for seventy-five seconds, then we go again.' },
+  { phase:'Circuit 1', name:'Jump Squats', type:'reps', reps:12, instruction:'Same as before — squat and explode. You\'re getting stronger each round.', cue:'Round two — jump squats again, twelve reps. Let\'s go.' },
+  { phase:'Circuit 1', name:'Reverse Lunges', type:'reps', reps:10, instruction:'Nice and controlled. Keep that front knee tracking over your toes.', cue:'Reverse lunges, ten each leg.' },
+  { phase:'Circuit 1', name:'Glute Bridges', type:'reps', reps:15, instruction:'Really squeeze at the top and hold for a full second before lowering.', cue:'Glute bridges — fifteen reps, squeeze at the top.' },
+  { phase:'Circuit 1', name:'Wall Sit', type:'timer', duration:40, instruction:'Push through — last one of this circuit!', cue:'Wall sit — forty seconds, last one of circuit one, finish strong.' },
+  { phase:'Circuit 1', name:'Rest — Round 2 Done!', type:'rest', duration:75, cue:'Round two done — one more round to go. Rest seventy-five seconds then finish strong.' },
+  { phase:'Circuit 1', name:'Jump Squats', type:'reps', reps:12, instruction:'Final round — give it everything. Explode up on every rep.', cue:'Round three — jump squats, twelve reps. Last round, make it your best.' },
+  { phase:'Circuit 1', name:'Reverse Lunges', type:'reps', reps:10, instruction:'Stay controlled even though you\'re tired. 10 each leg.', cue:'Reverse lunges — ten each leg, stay focused.' },
+  { phase:'Circuit 1', name:'Glute Bridges', type:'reps', reps:15, instruction:'Drive those hips up and hold at the top. Final set!', cue:'Glute bridges — fifteen reps, squeeze hard, this is the last set.' },
+  { phase:'Circuit 1', name:'Wall Sit', type:'timer', duration:40, instruction:'Last wall sit of the circuit — hold it no matter what!', cue:'Final wall sit — forty seconds, do not come up. You\'ve got this.' },
+  { phase:'Circuit 1', name:'Rest — Circuit 1 Complete!', type:'rest', duration:75, cue:'Circuit one is done — all three rounds. You crushed it. Rest seventy-five seconds before we hit upper body.' },
+
+  // CIRCUIT 2
+  { phase:'Circuit 2', name:'Push-Ups', type:'reps', reps:12, instruction:'Hands shoulder-width, body in a straight line. Lower your chest to the floor, press back up. Modify on knees if needed.', cue:'Push-ups — twelve reps. Chest to the floor, strong core.' },
+  { phase:'Circuit 2', name:'Pike Push-Ups', type:'reps', reps:8, instruction:'In a downward dog position, bend your elbows to lower your head toward the floor. This works your shoulders.', cue:'Pike push-ups — eight reps. Hips high, head down.' },
+  { phase:'Circuit 2', name:'Tricep Dips', type:'reps', reps:10, instruction:'Use a chair or bed edge. Hands behind you, lower your body by bending elbows, then press back up.', cue:'Tricep dips — ten reps. Find your chair or bed edge and get to work.' },
+  { phase:'Circuit 2', name:'Plank', type:'timer', duration:45, instruction:'Forearms on the floor, body in a straight line from head to heels. Squeeze everything — core, glutes, quads.', cue:'Plank hold — forty-five seconds. Squeeze every muscle and breathe.' },
+  { phase:'Circuit 2', name:'Rest — Round 1 Done!', type:'rest', duration:75, cue:'Round one of circuit two complete. Rest up — one more round of upper body.' },
+  { phase:'Circuit 2', name:'Push-Ups', type:'reps', reps:12, instruction:'Same great form — go deeper, go slower if you need to challenge yourself more.', cue:'Push-ups again — twelve reps. Make them count.' },
+  { phase:'Circuit 2', name:'Pike Push-Ups', type:'reps', reps:8, instruction:'Really feel the shoulders working here.', cue:'Pike push-ups — eight reps.' },
+  { phase:'Circuit 2', name:'Tricep Dips', type:'reps', reps:10, instruction:'Last set — give it everything you\'ve got.', cue:'Tricep dips — final set, ten reps, finish strong.' },
+  { phase:'Circuit 2', name:'Plank', type:'timer', duration:45, instruction:'Final plank! Don\'t let those hips sag. Lock it in.', cue:'Last plank of circuit two. Forty-five seconds. You\'ve got this.' },
+  { phase:'Circuit 2', name:'Rest — Before the Finisher!', type:'rest', duration:90, cue:'Circuits done — excellent. Ninety seconds rest, then we hit the cardio finisher. This is where the real fat burn happens.' },
+
+  // FINISHER
+  { phase:'Finisher', name:'Burpees', type:'reps', reps:10, instruction:'Stand, drop your hands to the floor, jump your feet back to plank, do a push-up, jump feet in, explode up with a jump.', cue:'Burpees — ten reps. The best fat burner there is. Go!' },
+  { phase:'Finisher', name:'Mountain Climbers', type:'timer', duration:30, instruction:'In a plank, drive your knees in toward your chest alternately — fast as you can while keeping form.', cue:'Mountain climbers — thirty seconds, fast as you can go.' },
+  { phase:'Finisher', name:'High Knees', type:'timer', duration:30, instruction:'Run in place, driving your knees up to hip height. Pump those arms. Full effort!', cue:'High knees — thirty seconds, full sprint effort.' },
+  { phase:'Finisher', name:'Jump Rope (Simulate)', type:'timer', duration:30, instruction:'Jump lightly on the balls of your feet like you\'re jumping rope. Alternate feet or double-hop.', cue:'Simulate jump rope — thirty seconds, stay light on your feet.' },
+  { phase:'Finisher', name:'Rest — Round 1 Done!', type:'rest', duration:90, cue:'Finisher round one is done. You are an animal. Ninety seconds rest, then one more round.' },
+  { phase:'Finisher', name:'Burpees', type:'reps', reps:10, instruction:'Last set of burpees — dig deep!', cue:'Final round — burpees, ten reps. Empty the tank.' },
+  { phase:'Finisher', name:'Mountain Climbers', type:'timer', duration:30, instruction:'Push through — almost done!', cue:'Mountain climbers — thirty seconds, push through.' },
+  { phase:'Finisher', name:'High Knees', type:'timer', duration:30, instruction:'This is the last hard push — everything you\'ve got!', cue:'High knees — LAST ONE. Give it everything.' },
+  { phase:'Finisher', name:'Jump Rope (Simulate)', type:'timer', duration:30, instruction:'Last 30 seconds of the workout — go until the timer hits zero!', cue:'Last thirty seconds. Jump rope simulation. Finish it!' },
+
+  // COOL DOWN
+  { phase:'Cool Down', name:'Standing Quad Stretch', type:'timer', duration:30, instruction:'Stand on one leg, pull your other foot to your glute. Hold 15 sec each side. Use a wall if needed.', cue:'Cool down. Standing quad stretch — hold each side for fifteen seconds.' },
+  { phase:'Cool Down', name:'Hip Flexor Lunge Stretch', type:'timer', duration:40, instruction:'Step one foot forward into a lunge, drop your back knee. Shift forward to feel the hip flexor stretch. 20 sec each.', cue:'Hip flexor stretch — twenty seconds each side, sink into it.' },
+  { phase:'Cool Down', name:'Seated Hamstring Stretch', type:'timer', duration:40, instruction:'Sit on the floor, legs straight. Hinge forward from your hips, reach for your feet. Hold and breathe.', cue:'Seated hamstring stretch — hinge forward, breathe and relax into it.' },
+  { phase:'Cool Down', name:"Child's Pose", type:'timer', duration:40, instruction:'Kneel and sit back on your heels, arms stretched forward on the floor. Drop your chest and breathe deeply.', cue:"Child's pose — arms forward, chest heavy. Take three deep breaths." },
+  { phase:'Cool Down', name:'Deep Breathing', type:'timer', duration:30, instruction:'Stand or sit comfortably. Inhale slowly for 4 counts, hold 2, exhale for 6. You earned this.', cue:'Final deep breaths. Inhale for four, hold, exhale for six. You are done — amazing work.' },
+];
+
+// ── State ────────────────────────────────────────────────────
+let step = -1;
+let voiceOn = true;
+let timerInterval = null;
+let timerRemaining = 0;
+let startTime = Date.now();
+let preferredVoice = null;
+let recognition = null;
+let micListening = false;
+
+// ── Voice Selection ───────────────────────────────────────────
+function pickVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return;
+  const score = v => {
+    const n = (v.lang + ' ' + v.name).toLowerCase();
+    const isAus = n.includes('en-au') || n.includes('australia');
+    const isGB  = n.includes('en-gb') || n.includes('british') || n.includes('united kingdom');
+    const isFem = /female|fiona|karen|catherine|serena|emily|alice|victoria|zoe|kate|freya/i.test(v.name);
+    if (isAus && isFem) return 5;
+    if (isGB  && isFem) return 4;
+    if (isAus)          return 3;
+    if (isGB)           return 2;
+    if (isFem)          return 1;
+    return 0;
+  };
+  const scored = voices.map(v => ({ v, s: score(v) })).sort((a,b) => b.s - a.s);
+  if (scored[0].s > 0) preferredVoice = scored[0].v;
+}
+window.speechSynthesis.onvoiceschanged = pickVoice;
+pickVoice();
+
+// ── Speak + optionally listen after ──────────────────────────
+function speak(text, listenAfter = false) {
+  if (!voiceOn) {
+    if (listenAfter) startListening();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.92;
+  u.pitch = 1.05;
+  u.volume = 1.0;
+  if (preferredVoice) u.voice = preferredVoice;
+  u.onend = () => { if (listenAfter) startListening(); };
+  window.speechSynthesis.speak(u);
+}
+
+// ── Mic / Speech Recognition ──────────────────────────────────
+function initRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.continuous = false;
+  r.interimResults = false;
+  r.lang = 'en-US';
+  r.onresult = (e) => {
+    const said = e.results[0][0].transcript.toLowerCase().trim();
+    if (/next|go|done|continue|skip|yes/.test(said)) {
+      stopListening();
+      const btn = document.getElementById('btnNext');
+      if (!btn.disabled) handleNext();
+    }
+  };
+  r.onend = () => { micListening = false; updateMicUI(); };
+  r.onerror = () => { micListening = false; updateMicUI(); };
+  return r;
+}
+
+function startListening() {
+  if (!recognition) recognition = initRecognition();
+  if (!recognition) return;
+  try { recognition.start(); micListening = true; updateMicUI(); } catch(e) {}
+}
+
+function stopListening() {
+  if (recognition && micListening) { try { recognition.stop(); } catch(e) {} }
+  micListening = false;
+  updateMicUI();
+}
+
+function updateMicUI() {
+  const btn = document.getElementById('btnMic');
+  if (!btn) return;
+  btn.textContent = micListening ? '🎙 Listening...' : '🎙 Say "Next"';
+  btn.classList.toggle('active', micListening);
+}
+
+function toggleVoice() {
+  voiceOn = !voiceOn;
+  const btn = document.getElementById('btnVoice');
+  btn.textContent = voiceOn ? '🔊 Voice On' : '🔇 Voice Off';
+  btn.classList.toggle('active', voiceOn);
+  if (!voiceOn) { window.speechSynthesis.cancel(); stopListening(); }
+}
+
+// ── Timer ────────────────────────────────────────────────────
+function startTimer(seconds, ringId, displayId, onDone) {
+  clearInterval(timerInterval);
+  timerRemaining = seconds;
+  updateRing(ringId, displayId, seconds, seconds);
+
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    updateRing(ringId, displayId, timerRemaining, seconds);
+    if (timerRemaining <= 3 && timerRemaining > 0) speak(String(timerRemaining));
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      onDone();
+    }
+  }, 1000);
+}
+
+function updateRing(ringId, displayId, remaining, total) {
+  const pct = remaining / total;
+  const offset = CIRC * (1 - pct);
+  document.getElementById(ringId).style.strokeDashoffset = offset;
+  document.getElementById(displayId).textContent = remaining;
+
+  // Color shift when low
+  const ring = document.getElementById(ringId);
+  if (remaining <= 5) ring.style.stroke = 'var(--accent2)';
+  else ring.style.stroke = ringId === 'restRingFill' ? 'var(--green)' : 'var(--accent)';
+}
+
+// ── Navigation ───────────────────────────────────────────────
+function handleNext() {
+  stopListening();
+  clearInterval(timerInterval);
+  step++;
+
+  if (step >= workout.length) {
+    showDone();
+    return;
+  }
+
+  const ex = workout[step];
+
+  // Screens
+  hide('introScreen');
+  show('btnRow');
+
+  // Update progress
+  const pct = Math.round((step / workout.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressLabel').textContent = `${step + 1} of ${workout.length}`;
+  document.getElementById('phaseBadge').textContent = ex.phase;
+
+  if (ex.type === 'rest') {
+    showRest(ex);
+  } else {
+    showExercise(ex);
+  }
+}
+
+function showExercise(ex) {
+  show('exerciseCard');
+  hide('restCard');
+  hide('doneCard');
+
+  document.getElementById('exName').innerHTML = formatName(ex.name);
+  document.getElementById('exNum').textContent = `Exercise ${step + 1} of ${workout.length}`;
+  document.getElementById('exInstruction').textContent = ex.instruction;
+
+  // Detail pills
+  const det = document.getElementById('exDetail');
+  det.innerHTML = '';
+  det.innerHTML = `<span class="pill highlight">${ex.phase}</span>`;
+  if (ex.type === 'reps') {
+    det.innerHTML += `<span class="pill">💪 ${ex.reps} reps</span>`;
+  } else {
+    det.innerHTML += `<span class="pill">⏱ ${ex.duration}s</span>`;
+  }
+
+  // Show right UI
+  if (ex.type === 'timer') {
+    show('timerSection');
+    hide('repSection');
+    document.getElementById('btnNext').disabled = true;
+    document.getElementById('btnNext').textContent = 'WORKING...';
+    speak(ex.cue);
+    setTimeout(() => {
+      startTimer(ex.duration, 'ringFill', 'timerDisplay', () => {
+        document.getElementById('btnNext').disabled = false;
+        document.getElementById('btnNext').textContent = 'NEXT EXERCISE →';
+        speak('Time! Great job. Say next when ready.', true);
+      });
+    }, 3200);
+  } else {
+    hide('timerSection');
+    show('repSection');
+    document.getElementById('repDisplay').textContent = ex.reps;
+    document.getElementById('btnNext').disabled = false;
+    document.getElementById('btnNext').textContent = 'DONE — NEXT →';
+    speak(ex.cue, true);
+  }
+}
+
+function showRest(ex) {
+  show('restCard');
+  hide('exerciseCard');
+  hide('doneCard');
+
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('btnNext').textContent = 'RESTING...';
+
+  // Preview next
+  const next = workout[step + 1];
+  document.getElementById('nextPreviewName').textContent = next ? formatNamePlain(next.name) : 'Cool Down';
+
+  speak(ex.cue);
+  setTimeout(() => {
+    startTimer(ex.duration, 'restRingFill', 'restTimerDisplay', () => {
+      document.getElementById('btnNext').disabled = false;
+      document.getElementById('btnNext').textContent = "LET'S GO →";
+      speak('Rest over — let\'s get back to work!', true);
+    });
+  }, 3500);
+}
+
+function skipRest() {
+  if (document.getElementById('restCard').classList.contains('hidden')) return;
+  clearInterval(timerInterval);
+  document.getElementById('btnNext').disabled = false;
+  document.getElementById('btnNext').textContent = "LET'S GO →";
+}
+
+function showDone() {
+  clearInterval(timerInterval);
+  hide('exerciseCard');
+  hide('restCard');
+  show('doneCard');
+  hide('btnRow');
+
+  const mins = Math.round((Date.now() - startTime) / 60000);
+  document.getElementById('statExercises').textContent = workout.filter(e => e.type !== 'rest').length;
+  document.getElementById('statTime').textContent = mins;
+  document.getElementById('btnNext').textContent = '🔁 DO IT AGAIN';
+  document.getElementById('btnNext').disabled = false;
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressPct').textContent = '100%';
+  document.getElementById('phaseBadge').textContent = 'Done!';
+
+  speak('Workout complete. You absolutely crushed it today. Rest up, eat well, and come back tomorrow. Amazing work!');
+
+  document.getElementById('btnNext').onclick = () => {
+    step = -1;
+    startTime = Date.now();
+    show('introScreen');
+    hide('doneCard');
+    hide('btnRow');
+    document.getElementById('btnNext').textContent = 'START WORKOUT →';
+    document.getElementById('btnNext').onclick = handleNext;
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressPct').textContent = '0%';
+    document.getElementById('progressLabel').textContent = 'Ready to start';
+    document.getElementById('phaseBadge').textContent = 'Intro';
+  };
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function formatName(name) {
+  const parts = name.split(' ');
+  if (parts.length <= 2) return name;
+  const half = Math.ceil(parts.length / 2);
+  return parts.slice(0, half).join(' ') + '<br>' + parts.slice(half).join(' ');
+}
+
+function formatNamePlain(name) { return name; }
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+</script>
+</body>
+</html>
